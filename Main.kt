@@ -53,12 +53,13 @@ fun parseData(jObject: JsonObject): WeatherObject {
     val speed = jsonArrWind.asJsonObject[KEY_FEATURES_SPEED]
 
     return WeatherObject(
-        name.toString(),
-        weather.toString(),
-        main.toString(),
-        description.toString(),
-        feelsLike.toString(),
-        speed.toString()
+        name.toString().replace("\"", ""),
+        weather.toString().replace("\"", ""),
+        main.asDouble,
+        description.toString().replace("\"", "").substring(0, 1).toUpperCase() +
+                description.toString().replace("\"", "").substring(1).toLowerCase(),
+        feelsLike.asDouble,
+        speed.asDouble
     )
 }
 
