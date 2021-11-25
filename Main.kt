@@ -8,6 +8,7 @@ import io.ktor.client.statement.*
 import io.ktor.utils.io.core.*
 import java.util.*
 
+// Переложить в отдельный файл, вдруг понадобятся в других классах
 private const val API_KEY = "5ba6d4e9b64a6355a8c8222fda310aeb"
 private const val URL_PART_FIRST = "https://api.openweathermap.org/data/2.5/weather?q="
 private const val URL_PART_SECOND = "&units=metric&lang="
