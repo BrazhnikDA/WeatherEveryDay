@@ -25,13 +25,14 @@ class WeatherObject(
         speed = speed_
     }
 
-    // Размер форматирования на основе самоой длинной строки в переменной
     override fun toString(): String {
+        val sizeTitle = "10"
+        val size = getIsLargeString()
         val outString: StringBuilder = StringBuilder()
 
-        val formattedStringTitle = "| %-10s"
-        val formattedValueString = "%-18s |\n"
-        val formattedValueDouble = "%-18.1f |\n"
+        val formattedStringTitle = "| %-${sizeTitle}s"
+        val formattedValueString = "%-${size}s |\n"
+        val formattedValueDouble = "%-${size}.1f |\n"
 
         val cityTitleStr = "City:"
         val tempTitleStr = "Temp.:"
@@ -42,7 +43,7 @@ class WeatherObject(
         val dateTitleStr = "Date:"
         val dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("M/d/y H:m:ss"))
 
-        outString.append("- - - - - - - - - - - - - - - -\n")
+        outString.append("${getSeparationLine(sizeTitle.toInt() + size.toInt() + 3)}\n")
         outString.append(formattedStringTitle.format(cityTitleStr) + formattedValueString.format(name))
         outString.append(formattedStringTitle.format(tempTitleStr) + formattedValueDouble.format(main))
         outString.append(formattedStringTitle.format(feelsTitleStr) + formattedValueDouble.format(feelsLike))
@@ -50,8 +51,37 @@ class WeatherObject(
         outString.append(formattedStringTitle.format(conditionTitleStr) + formattedValueString.format(description))
         outString.append(formattedStringTitle.format(windTitleStr) + formattedValueDouble.format(speed))
         outString.append(formattedStringTitle.format(dateTitleStr) + formattedValueString.format(dateTime))
-        outString.append("- - - - - - - - - - - - - - - -\n")
+        outString.append("${getSeparationLine(sizeTitle.toInt() + size.toInt() + 3)}\n")
 
         return outString.toString()
+    }
+
+    /**
+     *
+     * @return size
+     */
+    private fun getIsLargeString(): String {
+        val listString: List<String> =
+            mutableListOf(name, weather, main.toString(), description, feelsLike.toString(), speed.toString(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("M/d/y H:m:ss")))
+        var maxSize = 0
+
+        for (item in listString) {
+            if (item.length > maxSize)
+                maxSize = item.length
+        }
+        return maxSize.toString()
+    }
+
+    /**
+     * @param size count character in table in width
+     * @return string into separation line '- '
+     */
+    private fun getSeparationLine(size: Int): String {
+        val sepLine = StringBuilder("")
+        for(i in 0 until size / 2 + 1) {
+            sepLine.append("- ")
+        }
+        return sepLine.toString()
     }
 }
