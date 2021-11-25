@@ -5,66 +5,69 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.runBlocking
-import org.intellij.lang.annotations.Language
+import java.util.*
 
-private const val KEY_CONSOLIDATED_WEATHER = "consolidated_weather"
-private const val KEY_NAME_OF_CITY = "title"
-private const val KEY_MIN_TEMPERATURE = "min_temp"
-private const val KEY_MAX_TEMPERATURE = "max_temp"
-private const val KEY_THE_TEMPERATURE = "the_temp"
-private const val KEY_WIND_SPEED = "wind_speed"
-private const val KEY_CREATED_SPEED = "created"
+private const val API_KEY = "5ba6d4e9b64a6355a8c8222fda310aeb"
+private const val URL_PART_FIRST = "https://api.openweathermap.org/data/2.5/weather?q="
+private const val URL_PART_SECOND = "&units=metric&lang="
+private const val URL_PART_THIRD = "&appid="
 
-//
-/*
-*
-* */
+private const val KEY_NAME = "name"
+private const val KEY_WEATHER = "weather"
+private const val KEY_MAIN = "main"
+private const val KEY_WIND = "wind"
+
+private const val KEY_FEATURES_MAIN = "main"
+private const val KEY_FEATURES_DESCRIPTION = "description"
+private const val KEY_FEATURES_TEMP = "temp"
+private const val KEY_FEATURES_FEELS = "feels_like"
+private const val KEY_FEATURES_SPEED = "speed"
 
 
 suspend fun main() {
-    requestToWeather("Moscow")
+    val dataWeather = parseData(requestToWeather("Moscow", "en"))
+    println(dataWeather)
 }
 
-suspend fun requestToWeather(city: String) {
+private suspend fun requestToWeather(city: String, language: String): JsonObject {
     val client = HttpClient(CIO)
     val response: HttpResponse =
-        client.get("https://api.openweathermap.org/data/2.5/weather?q=Moscow&units=metric&lang=ru&appid=5ba6d4e9b64a6355a8c8222fda310aeb")
+        client.get(URL_PART_FIRST + city.lowercase(Locale.getDefault()) + URL_PART_SECOND + language + URL_PART_THIRD + API_KEY)
     client.close()
 
     val jsonParser = JsonParser()
-    val jObject = jsonParser.parse(java.lang.String.valueOf(String(response.receive()))) as JsonObject
+    return jsonParser.parse(java.lang.String.valueOf(String(response.receive()))) as JsonObject
+}
 
-    val jsonArrWeather = jObject.getAsJsonArray("weather")
-    val jsonArrMain = jObject.getAsJsonObject("main")
-    val jsonArrWind = jObject.getAsJsonObject("wind")
+fun parseData(jObject: JsonObject): WeatherObject {
+    val jsonArrWeather = jObject.getAsJsonArray(KEY_WEATHER)
+    val jsonArrMain = jObject.getAsJsonObject(KEY_MAIN)
+    val jsonArrWind = jObject.getAsJsonObject(KEY_WIND)
 
-    val weather = jsonArrWeather.get(0).asJsonObject["main"]
-    val description = jsonArrWeather.get(0).asJsonObject["description"]
+    val name = jObject.getAsJsonPrimitive(KEY_NAME)
+    val weather = jsonArrWeather.get(0).asJsonObject[KEY_FEATURES_MAIN]
+    val description = jsonArrWeather.get(0).asJsonObject[KEY_FEATURES_DESCRIPTION]
+    val main = jsonArrMain.asJsonObject[KEY_FEATURES_TEMP]
+    val feelsLike = jsonArrMain.asJsonObject[KEY_FEATURES_FEELS]
+    val speed = jsonArrWind.asJsonObject[KEY_FEATURES_SPEED]
 
-    val main = jsonArrMain.asJsonObject["temp"]
-    val feelsLike = jsonArrMain.asJsonObject["feels_like"]
-
-    val speed = jsonArrWind.asJsonObject["speed"]
-
-    println(weather)
-    println(description)
-
-    println(main)
-    println(feelsLike)
-
-    println(speed)
-    //val city = jObject[KEY_NAME_OF_CITY].toString()
-    //val minTemp = data[KEY_MIN_TEMPERATURE].toString().toDouble()
-
-
+    return WeatherObject(
+        name.toString(),
+        weather.toString(),
+        main.toString(),
+        description.toString(),
+        feelsLike.toString(),
+        speed.toString()
+    )
 }
 
 fun selectLanguage(language: String): String {
     return ""
+}
+
+fun menu() {
+
 }
 
 /*suspend fun main() {
