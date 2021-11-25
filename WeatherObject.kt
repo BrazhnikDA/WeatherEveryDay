@@ -25,6 +25,7 @@ class WeatherObject(
         speed = speed_
     }
 
+    // Размер форматирования на основе самоой длинной строки в переменной
     override fun toString(): String {
         val outString: StringBuilder = StringBuilder()
 
