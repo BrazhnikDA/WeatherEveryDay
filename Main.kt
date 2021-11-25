@@ -26,10 +26,32 @@ private const val KEY_FEATURES_SPEED = "speed"
 
 
 suspend fun main() {
-    val dataWeather = parseData(requestToWeather("Moscow", "en"))
+    var inLanguage: String
+    var inCity: String
+
+    do {
+        println(
+            "Input \"1\" for get guid info" +
+                    "Please select language: "
+        )
+        inLanguage = readLine().toString()
+        if (inLanguage == "1")
+            println(viewGuid())
+    } while (inLanguage == "1")
+
+    // Добавить более осознанную проверку, возможно запрос на сайт который вернёт ответ есть/не сущесвтует
+    println("Please select city: ")
+    inCity = readLine().toString()
+
+    val language = selectLanguage(inLanguage)
+    val city = selectCity(inCity)
+
+    println(menu())
+    val dataWeather = parseData(requestToWeather(city, language))
     println(dataWeather)
 }
 
+// Добавить запрос к переводчку (яндекс/гугл/сторонний сайт) для перевода фразы Weather на выбранный язык
 private suspend fun requestToWeather(city: String, language: String): JsonObject {
     val client = HttpClient(CIO)
     val response: HttpResponse =
@@ -56,21 +78,97 @@ fun parseData(jObject: JsonObject): WeatherObject {
         name.toString().replace("\"", ""),
         weather.toString().replace("\"", ""),
         main.asDouble,
-        description.toString().replace("\"", "").substring(0, 1).toUpperCase() +
-                description.toString().replace("\"", "").substring(1).toLowerCase(),
+        description.toString().replace("\"", "").substring(0, 1).uppercase() +
+                description.toString().replace("\"", "").substring(1).lowercase(),
         feelsLike.asDouble,
         speed.asDouble
     )
 }
 
+fun selectCity(city: String): String {
+    val resCity = StringBuilder()
+
+    for (ch in city.lowercase()) {
+        if (ch == ' ')
+            resCity.append('-')
+        else
+            resCity.append(ch)
+    }
+
+    return resCity.toString()
+}
+
 fun selectLanguage(language: String): String {
-    return ""
+    if (language.isNotEmpty())
+        if (language.length == 2)
+            return language.uppercase()
+
+    return "en"
 }
 
-fun menu() {
+// Добавить к меню функциональности
+fun menu(): String {
+    val menu = StringBuilder()
+    menu.append("Menu: \n")
+    menu.append("1. View\n")
+    menu.append("2. Change city\n")
+    menu.append("3. Change language\n")
+    menu.append("0. Exit this application\n")
 
+    return menu.toString()
 }
 
+fun viewGuid(): String {
+    return "All language: \n" +
+            "af Afrikaans\n" +
+            "al Albanian\n" +
+            "ar Arabic\n" +
+            "az Azerbaijani\n" +
+            "bg Bulgarian\n" +
+            "ca Catalan\n" +
+            "cz Czech\n" +
+            "da Danish\n" +
+            "de German\n" +
+            "el Greek\n" +
+            "en English\n" +
+            "eu Basque\n" +
+            "fa Persian (Farsi)\n" +
+            "fi Finnish\n" +
+            "fr French\n" +
+            "gl Galician\n" +
+            "he Hebrew\n" +
+            "hi Hindi\n" +
+            "hr Croatian\n" +
+            "hu Hungarian\n" +
+            "id Indonesian\n" +
+            "it Italian\n" +
+            "ja Japanese\n" +
+            "kr Korean\n" +
+            "la Latvian\n" +
+            "lt Lithuanian\n" +
+            "mk Macedonian\n" +
+            "no Norwegian\n" +
+            "nl Dutch\n" +
+            "pl Polish\n" +
+            "pt Portuguese\n" +
+            "pt_br Português Brasil\n" +
+            "ro Romanian\n" +
+            "ru Russian\n" +
+            "sv, se Swedish\n" +
+            "sk Slovak\n" +
+            "sl Slovenian\n" +
+            "sp, es Spanish\n" +
+            "sr Serbian\n" +
+            "th Thai\n" +
+            "tr Turkish\n" +
+            "ua, uk Ukrainian\n" +
+            "vi Vietnamese\n" +
+            "zh_cn Chinese Simplified\n" +
+            "zh_tw Chinese Traditional\n" +
+            "zu Zulu\n"
+}
+
+// First testing working library
 /*suspend fun main() {
     val client = HttpClient(CIO)
     val response: HttpResponse =
