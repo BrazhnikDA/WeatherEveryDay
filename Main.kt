@@ -5,6 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 import io.ktor.utils.io.core.*
 import java.util.*
 
@@ -41,8 +42,13 @@ suspend fun main() {
     } while (inLanguage == "1")
 
     // Добавить более осознанную проверку, возможно запрос на сайт который вернёт ответ есть/не сущесвтует
-    println("Please select city: ")
-    inCity = readLine().toString()
+    do {
+        println("Please select city: ")
+        inCity = readLine().toString()
+        val isExist = requestToCheckCity(selectCity(inCity))
+        if(!isExist)
+            println("City not found. Try again!")
+    }while (!isExist)
 
     val language = selectLanguage(inLanguage)
     val city = selectCity(inCity)
@@ -61,6 +67,17 @@ private suspend fun requestToWeather(city: String, language: String): JsonObject
 
     val jsonParser = JsonParser()
     return jsonParser.parse(java.lang.String.valueOf(String(response.receive()))) as JsonObject
+}
+
+private suspend fun requestToCheckCity(city: String): Boolean {
+    val client = HttpClient(CIO)
+    val response: HttpResponse =
+        client.get("https://nominatim.openstreetmap.org/search.php?q=" + city.lowercase(Locale.getDefault()) + "&format=jsonv2&debug=1")
+
+    client.close()
+
+    val stringBody: String = response.receive() //)) as JsonObject
+    return stringBody.contains("Valid Tokens:")
 }
 
 fun parseData(jObject: JsonObject): WeatherObject {
