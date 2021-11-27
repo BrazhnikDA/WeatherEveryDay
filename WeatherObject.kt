@@ -1,3 +1,10 @@
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -23,6 +30,45 @@ class WeatherObject(
         description = description_
         feelsLike = feelsLike_
         speed = speed_
+    }
+
+    class TranslateRequest(weatherObject: WeatherObject) {
+        val weatherObject = weatherObject
+        val cityTitleStr = "City:"
+        val tempTitleStr = "Temp.:"
+        val feelsTitleStr = "Feels:"
+        val weatherTitleStr = "Weather:"
+        val conditionTitleStr = "Status:"
+        val windTitleStr = "Wind:"
+        val dateTitleStr = "Date:"
+
+        suspend fun translate(): String {
+            val strOut = StringBuilder()
+            strOut.append(requestTranslateText(weatherObject.toString(), "ru"))
+            return strOut.toString()
+        }
+
+        private suspend fun requestTranslateText(text: String,language: String): String {
+            val client = HttpClient(CIO)
+            val response = client.post<HttpResponse>("https://fasttranslator.herokuapp.com/api/v1/text/to/text") {
+                headers {
+                    parameter("source", "$text")
+                    parameter("lang", "en-$language")
+                    parameter("as", "json")
+                }
+            }
+            client.close()
+
+            val jsonParser = JsonParser()
+            val request = jsonParser.parse(io.ktor.utils.io.core.String(response.receive())) as JsonObject
+            val data = request.getAsJsonPrimitive("data")
+            return data.toString().replace("\"", "")
+        }
+    }
+
+    suspend fun getA() {
+        val a = TranslateRequest(this)
+        a.translate()
     }
 
     override fun toString(): String {
