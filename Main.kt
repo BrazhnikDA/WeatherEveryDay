@@ -5,7 +5,6 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.http.*
 import io.ktor.utils.io.core.*
 import java.util.*
 
@@ -33,7 +32,7 @@ suspend fun main() {
 
     do {
         println(
-            "Input \"1\" for get guid info" +
+            "Input \"1\" for get guid info\n" +
                     "Please select language: "
         )
         inLanguage = readLine().toString()
@@ -41,7 +40,6 @@ suspend fun main() {
             println(viewGuid())
     } while (inLanguage == "1")
 
-    // Добавить более осознанную проверку, возможно запрос на сайт который вернёт ответ есть/не сущесвтует
     do {
         println("Please select city: ")
         inCity = readLine().toString()
@@ -50,12 +48,13 @@ suspend fun main() {
             println("City not found. Try again!")
     }while (!isExist)
 
-    val language = selectLanguage(inLanguage)
-    val city = selectCity(inCity)
+    val user = UserSettings(selectCity(inCity), selectLanguage(inLanguage))
 
     println(menu())
-    val dataWeather = parseData(requestToWeather(city, language))
-    println(dataWeather)
+    val dataWeather = parseData(requestToWeather(user.getCity(), user.getLanguage()))
+    println(dataWeather.toString() + user.getLanguage())
+
+    dataWeather.getA()
 }
 
 // Добавить запрос к переводчку (яндекс/гугл/сторонний сайт) для перевода фразы Weather на выбранный язык
@@ -73,10 +72,9 @@ private suspend fun requestToCheckCity(city: String): Boolean {
     val client = HttpClient(CIO)
     val response: HttpResponse =
         client.get("https://nominatim.openstreetmap.org/search.php?q=" + city.lowercase(Locale.getDefault()) + "&format=jsonv2&debug=1")
-
     client.close()
 
-    val stringBody: String = response.receive() //)) as JsonObject
+    val stringBody: String = response.receive()
     return stringBody.contains("Valid Tokens:")
 }
 
