@@ -27,17 +27,27 @@ Console application on Kotlin(1.6.0) + Ktor, for getting weather information fro
 	
 2. Gson - to process responses from the server
 	
+	```
 	dependencies {
+	
 		implementation("io.ktor:ktor-client-core:1.6.5")
+		
 		implementation("io.ktor:ktor-client-cio:1.6.5")
+		
 		implementation("com.google.code.gson:gson:2.8.5")
+		
 	}
+	```
 	
 3. Dokka - For code documentation
 	
+	```
 	plugins {
+	
 		id("org.jetbrains.dokka") version "1.5.30"
+		
 	}
+	```
 	
 	
 	
