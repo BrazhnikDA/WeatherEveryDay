@@ -29,13 +29,9 @@ Console application on Kotlin(1.6.0) + Ktor, for getting weather information fro
 	
 	```
 	dependencies {
-	
 		implementation("io.ktor:ktor-client-core:1.6.5")
-		
 		implementation("io.ktor:ktor-client-cio:1.6.5")
-		
 		implementation("com.google.code.gson:gson:2.8.5")
-		
 	}
 	```
 	
@@ -43,9 +39,7 @@ Console application on Kotlin(1.6.0) + Ktor, for getting weather information fro
 	
 	```
 	plugins {
-	
 		id("org.jetbrains.dokka") version "1.5.30"
-		
 	}
 	```
 	
