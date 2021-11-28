@@ -1,35 +1,46 @@
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.utils.io.core.*
-import java.util.*
+import kotlin.system.exitProcess
 
-// Переложить в отдельный файл, вдруг понадобятся в других классах
-private const val API_KEY = "5ba6d4e9b64a6355a8c8222fda310aeb"
-private const val URL_PART_FIRST = "https://api.openweathermap.org/data/2.5/weather?q="
-private const val URL_PART_SECOND = "&units=metric&lang="
-private const val URL_PART_THIRD = "&appid="
-
-private const val KEY_NAME = "name"
-private const val KEY_WEATHER = "weather"
-private const val KEY_MAIN = "main"
-private const val KEY_WIND = "wind"
-
-private const val KEY_FEATURES_MAIN = "main"
-private const val KEY_FEATURES_DESCRIPTION = "description"
-private const val KEY_FEATURES_TEMP = "temp"
-private const val KEY_FEATURES_FEELS = "feels_like"
-private const val KEY_FEATURES_SPEED = "speed"
-
-
+/**
+ * Main function for start application
+ */
 suspend fun main() {
-    var inLanguage: String
-    var inCity: String
+    menu()
+}
 
+/**
+ * Set current city
+ *
+ * Ask the user the city and check if it exists,
+ * if not, ask them to enter it again
+ *
+ * @param request object for working with queries
+ * @param inLanguage select language
+ * @return current city
+ */
+suspend fun inputCity(request: CreateRequest, inLanguage: String): String {
+    var inCity: String
+    do {
+        println("Please select city: ")
+        inCity = readLine().toString()
+        val isExist = request.requestToCheckExistCity(request.selectCity(inLanguage))
+        if (!isExist)
+            println("City not found. Try again!")
+    } while (!isExist)
+    return inCity
+}
+
+/**
+ * Set current language
+ *
+ * Ask the user the language and check if it exists,
+ * if not, ask them to set en by default
+ *
+ * If input '1', print guid info by languages
+ *
+ * @return current language
+ */
+fun inputLanguage(): String {
+    var inLanguage: String
     do {
         println(
             "Input \"1\" for get guid info\n" +
@@ -39,101 +50,71 @@ suspend fun main() {
         if (inLanguage == "1")
             println(viewGuid())
     } while (inLanguage == "1")
-
-    do {
-        println("Please select city: ")
-        inCity = readLine().toString()
-        val isExist = requestToCheckCity(selectCity(inCity))
-        if(!isExist)
-            println("City not found. Try again!")
-    }while (!isExist)
-
-    val user = UserSettings(selectCity(inCity), selectLanguage(inLanguage))
-
-    println(menu())
-    val dataWeather = parseData(requestToWeather(user.getCity(), user.getLanguage()))
-    println(dataWeather.toString() + user.getLanguage())
-
-    dataWeather.getA()
+    return inLanguage
 }
 
-// Добавить запрос к переводчку (яндекс/гугл/сторонний сайт) для перевода фразы Weather на выбранный язык
-private suspend fun requestToWeather(city: String, language: String): JsonObject {
-    val client = HttpClient(CIO)
-    val response: HttpResponse =
-        client.get(URL_PART_FIRST + city.lowercase(Locale.getDefault()) + URL_PART_SECOND + language + URL_PART_THIRD + API_KEY)
-    client.close()
+/**
+ * Calling the main menu
+ *
+ * The main menu for user interaction contains 4 items.
+ * 1. Display the weather 2. Change the city.
+ * 3 Change the language. 4 Exit the application
+ *
+ */
+suspend fun menu() {
+    val request = CreateRequest()
 
-    val jsonParser = JsonParser()
-    return jsonParser.parse(java.lang.String.valueOf(String(response.receive()))) as JsonObject
-}
+    var inLanguage = inputLanguage()
+    var inCity = inputCity(request, inLanguage)
 
-private suspend fun requestToCheckCity(city: String): Boolean {
-    val client = HttpClient(CIO)
-    val response: HttpResponse =
-        client.get("https://nominatim.openstreetmap.org/search.php?q=" + city.lowercase(Locale.getDefault()) + "&format=jsonv2&debug=1")
-    client.close()
+    val user = UserSettings(request.selectCity(inCity), request.selectLanguage("en", inLanguage))
 
-    val stringBody: String = response.receive()
-    return stringBody.contains("Valid Tokens:")
-}
-
-fun parseData(jObject: JsonObject): WeatherObject {
-    val jsonArrWeather = jObject.getAsJsonArray(KEY_WEATHER)
-    val jsonArrMain = jObject.getAsJsonObject(KEY_MAIN)
-    val jsonArrWind = jObject.getAsJsonObject(KEY_WIND)
-
-    val name = jObject.getAsJsonPrimitive(KEY_NAME)
-    val weather = jsonArrWeather.get(0).asJsonObject[KEY_FEATURES_MAIN]
-    val description = jsonArrWeather.get(0).asJsonObject[KEY_FEATURES_DESCRIPTION]
-    val main = jsonArrMain.asJsonObject[KEY_FEATURES_TEMP]
-    val feelsLike = jsonArrMain.asJsonObject[KEY_FEATURES_FEELS]
-    val speed = jsonArrWind.asJsonObject[KEY_FEATURES_SPEED]
-
-    return WeatherObject(
-        name.toString().replace("\"", ""),
-        weather.toString().replace("\"", ""),
-        main.asDouble,
-        description.toString().replace("\"", "").substring(0, 1).uppercase() +
-                description.toString().replace("\"", "").substring(1).lowercase(),
-        feelsLike.asDouble,
-        speed.asDouble
+    println(
+        request.parseData(request.requestToWeather(user.city, user.language)).outToConsole(request) +
+                "Select language: " + user.language
     )
-}
+    while (true) {
+        println("Menu: ")
+        println("1. View")
+        println("2. Change city")
+        println("3. Change language")
+        print("0. Exit this application\n> ")
 
-fun selectCity(city: String): String {
-    val resCity = StringBuilder()
-
-    for (ch in city.lowercase()) {
-        if (ch == ' ')
-            resCity.append('-')
-        else
-            resCity.append(ch)
+        when (readLine()) {
+            "1" -> println(view(request, user))
+            "2" -> {
+                inCity = inputCity(request, inLanguage)
+                user.city = request.selectCity(inCity)
+                println(view(request, user))
+            }
+            "3" -> {
+                val prevLanguage = user.language
+                inLanguage = inputLanguage()
+                user.language = request.selectLanguage(prevLanguage, inLanguage)
+                println(view(request, user))
+            }
+            "0" -> exitProcess(0)
+        }
     }
-
-    return resCity.toString()
 }
 
-fun selectLanguage(language: String): String {
-    if (language.isNotEmpty())
-        if (language.length == 2)
-            return language.uppercase()
-
-    return "en"
+/**
+ * Print the weather table
+ *
+ * @param request object for working with queries
+ * @param user object for storage user data (city, lang.)
+ * @return output
+ */
+private suspend fun view(request: CreateRequest, user: UserSettings): String {
+    return request.parseData(request.requestToWeather(user.city, user.language)).outToConsole(request) +
+            "Select language: " + user.language
 }
 
-// Добавить к меню функциональности
-fun menu(): String {
-    val menu = StringBuilder()
-    menu.append("Menu: \n")
-    menu.append("1. View\n")
-    menu.append("2. Change city\n")
-    menu.append("3. Change language\n")
-    menu.append("0. Exit this application\n")
-
-    return menu.toString()
-}
-
+/**
+ * Get guid info for language codes
+ *
+ * @return list language code
+ */
 fun viewGuid(): String {
     return "All language: \n" +
             "af Afrikaans\n" +
@@ -151,7 +132,7 @@ fun viewGuid(): String {
             "fa Persian (Farsi)\n" +
             "fi Finnish\n" +
             "fr French\n" +
-            "gl Galician\n" +
+            "gl Galicia\n" +
             "he Hebrew\n" +
             "hi Hindi\n" +
             "hr Croatian\n" +
@@ -167,7 +148,7 @@ fun viewGuid(): String {
             "nl Dutch\n" +
             "pl Polish\n" +
             "pt Portuguese\n" +
-            "pt_br Português Brasil\n" +
+            "pt_br Portugal Brazil\n" +
             "ro Romanian\n" +
             "ru Russian\n" +
             "sv, se Swedish\n" +
